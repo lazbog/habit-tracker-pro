@@ -1,113 +1,100 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { HabitCard } from '@/components/habit-card'
-import { HabitForm } from '@/components/habit-form'
-import { useHabits } from '@/lib/context'
-import { Plus, BarChart3 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus } from 'lucide-react'
+import { format } from 'date-fns'
+import { addHabit, getHabitsWithRecords } from '@/lib/habits'
+import { HabitFormData, HabitWithRecords } from '@/lib/types'
+import { formatDate } from '@/lib/utils'
+import HabitForm from '@/components/HabitForm'
+import HabitList from '@/components/HabitList'
+import HabitCalendar from '@/components/HabitCalendar'
+import HabitStats from '@/components/HabitStats'
+import { cn } from '@/lib/utils'
 
 export default function HomePage() {
-  const { state } = useHabits()
+  const [habits, setHabits] = useState<HabitWithRecords[]>([])
+  const [selectedDate, setSelectedDate] = useState(new Date())
   const [showForm, setShowForm] = useState(false)
-  
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-  
-  const completedToday = state.habits.filter(habit => {
-    const todayStr = new Date().toISOString().split('T')[0]
-    return habit.completedDates.includes(todayStr)
-  }).length
-  
+
+  const loadHabits = () => {
+    setHabits(getHabitsWithRecords(formatDate(selectedDate)))
+  }
+
+  useEffect(() => {
+    loadHabits()
+  }, [selectedDate])
+
+  const handleCreateHabit = (data: HabitFormData) => {
+    addHabit(data)
+    setShowForm(false)
+    loadHabits()
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <header className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-card-foreground">
-                Habit Tracker Pro
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {today}
+              <h1 className="text-3xl font-bold tracking-tight">Habit Tracker Pro</h1>
+              <p className="text-muted-foreground mt-1">
+                Build consistency, one day at a time
               </p>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Link href="/statistics">
-                <Button variant="outline" size="sm">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Statistics
-                </Button>
-              </Link>
-              
-              <Button onClick={() => setShowForm(true)} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Habit
-              </Button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              New Habit
+            </button>
+          </div>
+        </header>
+
+        <div className="mb-8">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Selected Date:</span>
+            <span className="font-medium text-foreground">
+              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Today's Habits</h2>
+              <HabitList
+                habits={habits}
+                selectedDate={formatDate(selectedDate)}
+                onHabitsChange={loadHabits}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Statistics</h2>
+              <HabitStats />
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Calendar</h2>
+              <HabitCalendar
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+              />
             </div>
           </div>
         </div>
-      </header>
-      
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {state.habits.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Plus className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h2 className="text-xl font-semibold text-card-foreground mb-2">
-              No habits yet
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Start building better habits by creating your first one
-            </p>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Your First Habit
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="mb-8 p-4 bg-card rounded-lg border">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-card-foreground">
-                    {state.habits.length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Total Habits</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-card-foreground">
-                    {completedToday}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Completed Today</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-card-foreground">
-                    {Math.round((completedToday / state.habits.length) * 100)}%
-                  </p>
-                  <p className="text-sm text-muted-foreground">Daily Progress</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              {state.habits.map((habit) => (
-                <HabitCard key={habit.id} habit={habit} />
-              ))}
-            </div>
-          </>
-        )}
-      </main>
-      
+      </div>
+
       {showForm && (
-        <HabitForm onClose={() => setShowForm(false)} />
+        <HabitForm
+          onSubmit={handleCreateHabit}
+          onCancel={() => setShowForm(false)}
+        />
       )}
     </div>
   )

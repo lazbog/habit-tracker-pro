@@ -2,9 +2,9 @@
 const nextConfig = {
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'localhost:3003'],
-    },
-  },
+      allowedOrigins: ["localhost:3003", "habit-tracker-pro.vercel.app"]
+    }
+  }
 }
 
 module.exports = nextConfig

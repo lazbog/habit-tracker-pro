@@ -1,7 +1,7 @@
 'use client';
 
-import { Habit, HabitRecord, HabitStats, DailyStats, ChartData } from './types'
-import { format, subDays, startOfDay, isAfter } from 'date-fns'
+import { Habit, HabitRecord, HabitFormData, HabitWithRecords, DailyStats } from './types'
+import { formatDate } from './utils'
 
 const HABITS_KEY = 'habit-tracker-habits'
 const RECORDS_KEY = 'habit-tracker-records'
@@ -17,23 +17,36 @@ export function saveHabits(habits: Habit[]): void {
   localStorage.setItem(HABITS_KEY, JSON.stringify(habits))
 }
 
-export function addHabit(habit: Omit<Habit, 'id' | 'createdAt'>): Habit {
-  const newHabit: Habit = {
-    ...habit,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-  }
+export function addHabit(data: HabitFormData): Habit {
   const habits = getHabits()
+  const newHabit: Habit = {
+    id: crypto.randomUUID(),
+    ...data,
+    createdAt: formatDate(new Date())
+  }
   saveHabits([...habits, newHabit])
   return newHabit
 }
 
-export function deleteHabit(id: string): void {
-  const habits = getHabits().filter(h => h.id !== id)
-  saveHabits(habits)
+export function updateHabit(id: string, data: Partial<HabitFormData>): Habit | null {
+  const habits = getHabits()
+  const index = habits.findIndex(h => h.id === id)
+  if (index === -1) return null
   
-  const records = getRecords().filter(r => r.habitId !== id)
-  saveRecords(records)
+  const updatedHabit = { ...habits[index], ...data }
+  habits[index] = updatedHabit
+  saveHabits(habits)
+  return updatedHabit
+}
+
+export function deleteHabit(id: string): boolean {
+  const habits = getHabits()
+  const filteredHabits = habits.filter(h => h.id !== id)
+  if (filteredHabits.length === habits.length) return false
+  
+  saveHabits(filteredHabits)
+  deleteRecordsByHabitId(id)
+  return true
 }
 
 export function getRecords(): HabitRecord[] {
@@ -47,110 +60,70 @@ export function saveRecords(records: HabitRecord[]): void {
   localStorage.setItem(RECORDS_KEY, JSON.stringify(records))
 }
 
-export function toggleHabitCompletion(habitId: string, date: string): HabitRecord {
+export function toggleHabitRecord(habitId: string, date: string): HabitRecord {
   const records = getRecords()
-  const existingRecord = records.find(r => r.habitId === habitId && r.date === date)
+  const existingIndex = records.findIndex(r => r.habitId === habitId && r.date === date)
   
-  if (existingRecord) {
-    const updatedRecords = records.map(r => 
-      r.habitId === habitId && r.date === date 
-        ? { ...r, completed: !r.completed }
-        : r
-    )
-    saveRecords(updatedRecords)
-    return { ...existingRecord, completed: !existingRecord.completed }
+  if (existingIndex !== -1) {
+    records[existingIndex].completed = !records[existingIndex].completed
   } else {
-    const newRecord: HabitRecord = {
-      id: crypto.randomUUID(),
+    records.push({
       habitId,
       date,
-      completed: true,
-    }
-    saveRecords([...records, newRecord])
-    return newRecord
-  }
-}
-
-export function getHabitStats(habitId: string): HabitStats {
-  const habits = getHabits()
-  const records = getRecords()
-  const habit = habits.find(h => h.id === habitId)
-  
-  if (!habit) {
-    return {
-      habitId,
-      habitName: 'Unknown',
-      totalDays: 0,
-      completedDays: 0,
-      streak: 0,
-      completionRate: 0,
-    }
-  }
-  
-  const habitRecords = records.filter(r => r.habitId === habitId)
-  const habitCreationDate = startOfDay(new Date(habit.createdAt))
-  const today = startOfDay(new Date())
-  
-  let totalDays = 0
-  let currentDate = habitCreationDate
-  
-  while (!isAfter(currentDate, today)) {
-    totalDays++
-    currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)
-  }
-  
-  const completedDays = habitRecords.filter(r => r.completed).length
-  const completionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0
-  
-  let streak = 0
-  let checkDate = today
-  
-  while (true) {
-    const record = habitRecords.find(r => r.date === format(checkDate, 'yyyy-MM-dd'))
-    if (record && record.completed) {
-      streak++
-      checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000)
-    } else {
-      break
-    }
-  }
-  
-  return {
-    habitId,
-    habitName: habit.name,
-    totalDays,
-    completedDays,
-    streak,
-    completionRate,
-  }
-}
-
-export function getDailyStats(days: number = 30): DailyStats[] {
-  const records = getRecords()
-  const habits = getHabits()
-  const stats: DailyStats[] = []
-  
-  for (let i = days - 1; i >= 0; i--) {
-    const date = format(subDays(new Date(), i), 'yyyy-MM-dd')
-    const dayRecords = records.filter(r => r.date === date)
-    const totalHabits = habits.filter(h => !isAfter(new Date(habit.createdAt), new Date(date))).length
-    const completedHabits = dayRecords.filter(r => r.completed).length
-    
-    stats.push({
-      date,
-      totalHabits,
-      completedHabits,
-      completionRate: totalHabits > 0 ? Math.round((completedHabits / totalHabits) * 100) : 0,
+      completed: true
     })
   }
   
-  return stats
+  saveRecords(records)
+  return records.find(r => r.habitId === habitId && r.date === date)!
 }
 
-export function getChartData(days: number = 30): ChartData[] {
-  const dailyStats = getDailyStats(days)
-  return dailyStats.map(stat => ({
-    date: format(new Date(stat.date), 'MMM dd'),
-    completionRate: stat.completionRate,
+export function deleteRecordsByHabitId(habitId: string): void {
+  const records = getRecords()
+  const filteredRecords = records.filter(r => r.habitId !== habitId)
+  saveRecords(filteredRecords)
+}
+
+export function getHabitsWithRecords(date?: string): HabitWithRecords[] {
+  const habits = getHabits()
+  const records = getRecords()
+  const targetDate = date || formatDate(new Date())
+  
+  return habits.map(habit => ({
+    ...habit,
+    records: records.filter(r => r.habitId === habit.id)
   }))
+}
+
+export function getHabitRecordsForDate(habitId: string, date: string): HabitRecord | null {
+  const records = getRecords()
+  return records.find(r => r.habitId === habitId && r.date === date) || null
+}
+
+export function getDailyStats(date: string): DailyStats {
+  const habits = getHabits()
+  const records = getRecords().filter(r => r.date === date)
+  
+  const completed = records.filter(r => r.completed).length
+  const total = habits.length
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
+  
+  return {
+    date,
+    completed,
+    total,
+    percentage
+  }
+}
+
+export function getWeeklyStats(startDate: Date, endDate: Date): DailyStats[] {
+  const stats: DailyStats[] = []
+  const currentDate = new Date(startDate)
+  
+  while (currentDate <= endDate) {
+    stats.push(getDailyStats(formatDate(currentDate)))
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+  
+  return stats
 }

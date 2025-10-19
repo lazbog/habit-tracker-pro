@@ -1,3 +1,9 @@
+import { NextResponse } from 'next/server'
+
 export async function GET() {
-  return Response.json({ ok: true, timestamp: new Date().toISOString() });
+  return NextResponse.json({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    message: 'Habit Tracker Pro API is running'
+  })
 }

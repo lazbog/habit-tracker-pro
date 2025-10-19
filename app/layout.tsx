@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Habit Tracker Pro',
-  description: 'Track your daily habits and build better routines',
+  description: 'Track your daily habits and build consistency',
 }
 
 export default function RootLayout({

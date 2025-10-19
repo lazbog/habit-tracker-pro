@@ -2,122 +2,141 @@
 
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
+import { HabitFormData } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 interface HabitFormProps {
-  onSubmit: (data: { name: string; description: string; color: string; icon: string }) => void
-  onCancel: () => void
+  onSubmit: (data: HabitFormData) => void
+  onCancel?: () => void
+  initialData?: Partial<HabitFormData>
+  isEditing?: boolean
 }
 
-const ICONS = ['🏃', '📚', '💪', '🧘', '💧', '🥗', '😴', '✍️', '🎯', '🎨']
-const COLORS = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-red-500']
+const colors = [
+  { name: 'Blue', value: 'bg-blue-500' },
+  { name: 'Green', value: 'bg-green-500' },
+  { name: 'Purple', value: 'bg-purple-500' },
+  { name: 'Pink', value: 'bg-pink-500' },
+  { name: 'Orange', value: 'bg-orange-500' },
+  { name: 'Teal', value: 'bg-teal-500' },
+]
 
-export default function HabitForm({ onSubmit, onCancel }: HabitFormProps) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [selectedIcon, setSelectedIcon] = useState(ICONS[0])
-  const [selectedColor, setSelectedColor] = useState(COLORS[0])
+export default function HabitForm({ onSubmit, onCancel, initialData, isEditing = false }: HabitFormProps) {
+  const [formData, setFormData] = useState<HabitFormData>({
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    targetDays: initialData?.targetDays || 30,
+    color: initialData?.color || 'bg-blue-500'
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (name.trim()) {
-      onSubmit({
-        name: name.trim(),
-        description: description.trim(),
-        color: selectedColor,
-        icon: selectedIcon,
-      })
-    }
+    if (!formData.name.trim()) return
+    onSubmit(formData)
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-card rounded-lg p-6 w-full max-w-md relative">
-        <button
-          onClick={onCancel}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-        >
-          <X className="w-5 h-5" />
-        </button>
+      <div className="bg-background rounded-lg shadow-lg w-full max-w-md">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-lg font-semibold">
+            {isEditing ? 'Edit Habit' : 'Create New Habit'}
+          </h2>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
         
-        <h2 className="text-xl font-semibold mb-4">Add New Habit</h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Name</label>
+            <label htmlFor="name" className="block text-sm font-medium mb-2">
+              Habit Name *
+            </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="e.g., Morning Exercise"
               required
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Description (optional)</label>
+            <label htmlFor="description" className="block text-sm font-medium mb-2">
+              Description
+            </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Add a description..."
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              placeholder="Optional description..."
               rows={3}
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Icon</label>
-            <div className="flex flex-wrap gap-2">
-              {ICONS.map((icon) => (
-                <button
-                  key={icon}
-                  type="button"
-                  onClick={() => setSelectedIcon(icon)}
-                  className={`w-10 h-10 rounded-md flex items-center justify-center text-lg transition-colors ${
-                    selectedIcon === icon ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80'
-                  }`}
-                >
-                  {icon}
-                </button>
-              ))}
-            </div>
+            <label htmlFor="targetDays" className="block text-sm font-medium mb-2">
+              Target Days
+            </label>
+            <input
+              type="number"
+              id="targetDays"
+              value={formData.targetDays}
+              onChange={(e) => setFormData({ ...formData, targetDays: parseInt(e.target.value) || 1 })}
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              min="1"
+              max="365"
+            />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Color</label>
+            <label className="block text-sm font-medium mb-2">
+              Color
+            </label>
             <div className="flex gap-2">
-              {COLORS.map((color) => (
+              {colors.map((color) => (
                 <button
-                  key={color}
+                  key={color.value}
                   type="button"
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-10 h-10 rounded-md ${color} flex items-center justify-center transition-opacity ${
-                    selectedColor === color ? 'ring-2 ring-ring ring-offset-2' : 'opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  {selectedIcon === icon && (
-                    <span className="text-white text-sm">{icon}</span>
+                  onClick={() => setFormData({ ...formData, color: color.value })}
+                  className={cn(
+                    'w-8 h-8 rounded-full transition-all',
+                    color.value,
+                    formData.color === color.value
+                      ? 'ring-2 ring-ring ring-offset-2'
+                      : 'hover:scale-110'
                   )}
-                </button>
+                  title={color.name}
+                />
               ))}
             </div>
           </div>
           
           <div className="flex gap-3 pt-4">
             <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 px-4 py-2 border border-input rounded-md hover:bg-secondary transition-colors"
-            >
-              Cancel
-            </button>
-            <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4" />
-              Add Habit
+              <Plus className="h-4 w-4" />
+              {isEditing ? 'Update Habit' : 'Create Habit'}
             </button>
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="flex-1 bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/80 transition-colors"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </form>
       </div>

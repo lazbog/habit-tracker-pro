@@ -1,16 +1,15 @@
 # Habit Tracker Pro
 
-A modern habit tracking application built with Next.js 14, TypeScript, and Tailwind CSS. Track your daily habits, monitor your progress, and build better routines.
+A modern habit tracking application built with Next.js 14, TypeScript, and Tailwind CSS. Track your daily habits, monitor your progress, and build consistency with an intuitive interface.
 
 ## Features
 
-- 📝 Create and manage daily habits
-- ✅ Mark habits as complete with a single click
-- 📊 Visual progress tracking with streaks and completion rates
-- 📈 Statistics dashboard with charts and analytics
-- 🎨 Customizable habit icons and colors
-- 💾 Local storage for data persistence
-- 📱 Responsive design for all devices
+- 📅 **Calendar View**: Visual calendar showing habit completion history
+- ✅ **Daily Tracking**: Check off habits as you complete them each day
+- 📊 **Statistics Dashboard**: Track streaks, completion rates, and weekly averages
+- 🎨 **Customizable Habits**: Create habits with custom colors, descriptions, and target goals
+- 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
+- 💾 **Local Storage**: All data is stored locally in your browser
 
 ## Getting Started
 
@@ -25,52 +24,51 @@ A modern habit tracking application built with Next.js 14, TypeScript, and Tailw
    ```
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+## Usage
+
+1. **Create a Habit**: Click the "New Habit" button to add a new habit with a name, description, target days, and color
+2. **Track Daily**: Use the checkboxes to mark habits as complete for the selected day
+3. **View Calendar**: Navigate through the calendar to see your completion history
+4. **Monitor Progress**: Check the statistics dashboard for streaks and completion percentages
+5. **Edit/Delete**: Use the edit and delete buttons to manage your habits
+
 ## Tech Stack
 
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
-- **Tailwind CSS** - Utility-first CSS framework
-- **Lucide React** - Beautiful icons
-- **Recharts** - Chart library for statistics
-- **date-fns** - Date manipulation utilities
+- **Next.js 14**: React framework with App Router
+- **TypeScript**: Type-safe JavaScript
+- **Tailwind CSS**: Utility-first CSS framework
+- **Lucide React**: Icon library
+- **date-fns**: Date manipulation utilities
 
 ## Project Structure
 
 ```
 habit-tracker-pro/
 ├── app/
-│   ├── api/
-│   │   ├── habits/          # API routes for habit management
-│   │   └── ping/            # Health check endpoint
-│   ├── statistics/          # Statistics page
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Home page
+│   ├── api/ping/
+│   │   └── route.ts          # Health check endpoint
+│   ├── globals.css           # Global styles
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Main page
 ├── components/
-│   ├── ui/
-│   │   └── button.tsx       # Reusable button component
-│   ├── habit-card.tsx       # Habit display card
-│   └── habit-form.tsx       # Habit creation/editing form
+│   ├── HabitCalendar.tsx     # Calendar component
+│   ├── HabitForm.tsx         # Habit creation/editing form
+│   ├── HabitList.tsx         # List of habits for selected day
+│   └── HabitStats.tsx        # Statistics dashboard
 ├── lib/
-│   ├── context.tsx          # React context for state management
-│   ├── types.ts             # TypeScript type definitions
-│   └── utils.ts             # Utility functions
-└── public/                  # Static assets
+│   ├── habits.ts             # Habit management logic
+│   ├── types.ts              # TypeScript type definitions
+│   └── utils.ts              # Utility functions
+└── public/                   # Static assets
 ```
 
-## Usage
+## Data Storage
 
-1. **Creating Habits**: Click the "Add Habit" button to create a new habit with a name, description, icon, color, and target streak.
-
-2. **Tracking Progress**: Mark habits as complete daily to build streaks. Your progress is automatically saved.
-
-3. **Viewing Statistics**: Navigate to the Statistics page to see your progress over time, completion rates, and top-performing habits.
-
-4. **Managing Habits**: Edit or delete habits using the action buttons on each habit card.
-
-## Data Persistence
-
-The application uses browser's localStorage to persist your habit data. All your habits and progress are saved locally and will be available when you return to the app.
+All habit data is stored locally in the browser's localStorage. This means:
+- Your data stays private and on your device
+- No internet connection required after initial load
+- Data persists between sessions
+- Clearing browser data will remove all habits
 
 ## Contributing
 
