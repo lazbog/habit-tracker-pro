@@ -1,78 +1,28 @@
-import { Habit, HabitRecord } from './types'
+import { Habit } from './types'
 
-const STORAGE_KEYS = {
-  HABITS: 'habit-tracker-habits',
-  RECORDS: 'habit-tracker-records',
+const STORAGE_KEY = 'habit-tracker-pro-habits'
+
+export function getHabits(): Habit[] {
+  if (typeof window === 'undefined') return []
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) return []
+    
+    const habits = JSON.parse(stored)
+    return Array.isArray(habits) ? habits : []
+  } catch (error) {
+    console.error('Error loading habits from localStorage:', error)
+    return []
+  }
 }
 
-export const storage = {
-  getHabits: (): Habit[] => {
-    if (typeof window === 'undefined') return []
-    const data = localStorage.getItem(STORAGE_KEYS.HABITS)
-    return data ? JSON.parse(data) : []
-  },
-
-  saveHabits: (habits: Habit[]): void => {
-    if (typeof window === 'undefined') return
-    localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits))
-  },
-
-  getRecords: (): HabitRecord[] => {
-    if (typeof window === 'undefined') return []
-    const data = localStorage.getItem(STORAGE_KEYS.RECORDS)
-    return data ? JSON.parse(data) : []
-  },
-
-  saveRecords: (records: HabitRecord[]): void => {
-    if (typeof window === 'undefined') return
-    localStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(records))
-  },
-
-  addHabit: (habit: Habit): void => {
-    const habits = storage.getHabits()
-    habits.push(habit)
-    storage.saveHabits(habits)
-  },
-
-  updateHabit: (id: string, updates: Partial<Habit>): void => {
-    const habits = storage.getHabits()
-    const index = habits.findIndex(h => h.id === id)
-    if (index !== -1) {
-      habits[index] = { ...habits[index], ...updates }
-      storage.saveHabits(habits)
-    }
-  },
-
-  deleteHabit: (id: string): void => {
-    const habits = storage.getHabits()
-    const filtered = habits.filter(h => h.id !== id)
-    storage.saveHabits(filtered)
-    
-    const records = storage.getRecords()
-    const filteredRecords = records.filter(r => r.habitId !== id)
-    storage.saveRecords(filteredRecords)
-  },
-
-  toggleRecord: (habitId: string, date: string): void => {
-    const records = storage.getRecords()
-    const existingIndex = records.findIndex(r => r.habitId === habitId && r.date === date)
-    
-    if (existingIndex !== -1) {
-      records[existingIndex].completed = !records[existingIndex].completed
-    } else {
-      records.push({
-        id: crypto.randomUUID(),
-        habitId,
-        date,
-        completed: true,
-      })
-    }
-    
-    storage.saveRecords(records)
-  },
-
-  getRecord: (habitId: string, date: string): HabitRecord | undefined => {
-    const records = storage.getRecords()
-    return records.find(r => r.habitId === habitId && r.date === date)
-  },
+export function saveHabits(habits: Habit[]): void {
+  if (typeof window === 'undefined') return
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(habits))
+  } catch (error) {
+    console.error('Error saving habits to localStorage:', error)
+  }
 }

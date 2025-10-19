@@ -1,335 +1,198 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, BarChart3, TrendingUp, Calendar, Target } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { storage } from '@/lib/storage'
-import { Habit, HabitRecord, DailyStats, CategoryStats } from '@/lib/types'
-import Link from 'next/link'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts'
+import { BarChart3, Calendar, TrendingUp } from 'lucide-react'
+import { Habit } from '@/lib/types'
+import { getHabits } from '@/lib/storage'
+import StatsCalendar from '@/components/StatsCalendar'
 
 export default function StatsPage() {
   const [habits, setHabits] = useState<Habit[]>([])
-  const [records, setRecords] = useState<HabitRecord[]>([])
-  const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
-  const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([])
-  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('month')
+  const [selectedHabit, setSelectedHabit] = useState<string>('all')
+  const [selectedMonth, setSelectedMonth] = useState(new Date())
 
   useEffect(() => {
-    loadData()
+    const loadedHabits = getHabits()
+    setHabits(loadedHabits)
   }, [])
 
-  const loadData = () => {
-    const allHabits = storage.getHabits()
-    const allRecords = storage.getRecords()
+  const getStats = () => {
+    const today = new Date().toISOString().split('T')[0]
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
-    setHabits(allHabits)
-    setRecords(allRecords)
+    let totalCompletions = 0
+    let possibleCompletions = 0
     
-    const daily = calculateDailyStats(allHabits, allRecords)
-    setDailyStats(daily)
-    
-    const category = calculateCategoryStats(allHabits, allRecords)
-    setCategoryStats(category)
-  }
-
-  const calculateDailyStats = (habits: Habit[], records: HabitRecord[]): DailyStats[] => {
-    const today = new Date()
-    const daysToShow = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 365
-    
-    const stats: DailyStats[] = []
-    
-    for (let i = daysToShow - 1; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(today.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0]
-      
-      const dayRecords = records.filter(r => r.date === dateStr)
-      const completed = dayRecords.filter(r => r.completed).length
-      
-      stats.push({
-        date: date.toLocaleDateString('en', { month: 'short', day: 'numeric' }),
-        completed,
-        total: habits.length,
-        percentage: habits.length > 0 ? (completed / habits.length) * 100 : 0,
-      })
-    }
-    
-    return stats
-  }
-
-  const calculateCategoryStats = (habits: Habit[], records: HabitRecord[]): CategoryStats[] => {
-    const categories = [...new Set(habits.map(h => h.category))]
-    
-    return categories.map(category => {
-      const categoryHabits = habits.filter(h => h.category === category)
-      const categoryRecords = records.filter(r => 
-        categoryHabits.some(h => h.id === r.habitId)
-      )
-      const completed = categoryRecords.filter(r => r.completed).length
-      
-      return {
-        category,
-        completed,
-        total: categoryRecords.length,
-        percentage: categoryRecords.length > 0 ? (completed / categoryRecords.length) * 100 : 0,
+    habits.forEach(habit => {
+      if (selectedHabit === 'all' || habit.id === selectedHabit) {
+        const recentCompletions = habit.completedDates.filter(date => 
+          date >= thirtyDaysAgo && date <= today
+        )
+        totalCompletions += recentCompletions.length
+        possibleCompletions += 30
       }
     })
+    
+    const completionRate = possibleCompletions > 0 
+      ? Math.round((totalCompletions / possibleCompletions) * 100) 
+      : 0
+    
+    return { totalCompletions, completionRate, possibleCompletions }
   }
 
-  const getOverallStats = () => {
-    const totalHabits = habits.length
-    const totalRecords = records.length
-    const completedRecords = records.filter(r => r.completed).length
-    const completionRate = totalRecords > 0 ? (completedRecords / totalRecords) * 100 : 0
-    
-    const uniqueDays = new Set(records.map(r => r.date)).size
-    const activeDays = new Set(
-      records.filter(r => r.completed).map(r => r.date)
-    ).size
-    
-    return {
-      totalHabits,
-      totalRecords,
-      completedRecords,
-      completionRate,
-      uniqueDays,
-      activeDays,
-    }
-  }
-
-  const stats = getOverallStats()
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
+  const stats = getStats()
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <header className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-2">
-                  <BarChart3 className="h-8 w-8 text-blue-500" />
-                  Statistics
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  Track your progress and analyze your habits
-                </p>
-              </div>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Statistics</h1>
+            <p className="text-muted-foreground mt-2">Track your progress and stay motivated</p>
+          </div>
+          <a
+            href="/"
+            className="text-primary hover:underline"
+          >
+            ← Back to Habits
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-card p-6 rounded-lg border">
+            <div className="flex items-center gap-3 mb-2">
+              <BarChart3 className="w-8 h-8 text-primary" />
+              <h3 className="text-lg font-semibold">Total Completions</h3>
             </div>
-            <div className="flex gap-2">
-              {(['week', 'month', 'year'] as const).map((range) => (
-                <Button
-                  key={range}
-                  variant={timeRange === range ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTimeRange(range)}
-                >
-                  {range.charAt(0).toUpperCase() + range.slice(1)}
-                </Button>
-              ))}
+            <p className="text-3xl font-bold text-foreground">{stats.totalCompletions}</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Last 30 days
+            </p>
+          </div>
+
+          <div className="bg-card p-6 rounded-lg border">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="w-8 h-8 text-primary" />
+              <h3 className="text-lg font-semibold">Completion Rate</h3>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{stats.completionRate}%</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              {stats.totalCompletions} of {stats.possibleCompletions} completed
+            </p>
+          </div>
+
+          <div className="bg-card p-6 rounded-lg border">
+            <div className="flex items-center gap-3 mb-2">
+              <Calendar className="w-8 h-8 text-primary" />
+              <h3 className="text-lg font-semibold">Active Habits</h3>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{habits.length}</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Total habits tracked
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-card p-6 rounded-lg border mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Select Habit</label>
+              <select
+                value={selectedHabit}
+                onChange={(e) => setSelectedHabit(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md bg-background"
+              >
+                <option value="all">All Habits</option>
+                {habits.map(habit => (
+                  <option key={habit.id} value={habit.id}>
+                    {habit.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Select Month</label>
+              <input
+                type="month"
+                value={selectedMonth.toISOString().slice(0, 7)}
+                onChange={(e) => setSelectedMonth(new Date(e.target.value))}
+                className="w-full px-3 py-2 border rounded-md bg-background"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="text-2xl font-bold">{stats.totalHabits}</div>
-              <div className="text-sm text-muted-foreground">Total Habits</div>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="text-2xl font-bold">{stats.uniqueDays}</div>
-              <div className="text-sm text-muted-foreground">Days Tracked</div>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="text-2xl font-bold">{stats.activeDays}</div>
-              <div className="text-sm text-muted-foreground">Active Days</div>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="text-2xl font-bold">{stats.completedRecords}</div>
-              <div className="text-sm text-muted-foreground">Completions</div>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="text-2xl font-bold">{stats.completionRate.toFixed(1)}%</div>
-              <div className="text-sm text-muted-foreground">Success Rate</div>
-            </div>
-            <div className="bg-card rounded-lg p-4 border">
-              <div className="text-2xl font-bold flex items-center gap-1">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                {dailyStats.length > 0 
-                  ? dailyStats[dailyStats.length - 1]?.percentage.toFixed(0) 
-                  : 0}%
-              </div>
-              <div className="text-sm text-muted-foreground">Today</div>
-            </div>
-          </div>
-        </header>
-
-        <main className="space-y-6">
-          {dailyStats.length > 0 && (
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-card rounded-lg p-6 border">
-                <h3 className="text-lg font-semibold mb-4">Daily Completion Rate</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={dailyStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="percentage" 
-                      stroke="#8884d8" 
-                      strokeWidth={2}
-                      dot={{ fill: '#8884d8' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-card rounded-lg p-6 border">
-                <h3 className="text-lg font-semibold mb-4">Habits Completed per Day</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dailyStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="completed" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
+          <h3 className="text-xl font-semibold mb-4">Calendar View</h3>
+          {habits.length > 0 ? (
+            <StatsCalendar
+              habits={habits.filter(h => selectedHabit === 'all' || h.id === selectedHabit)}
+              month={selectedMonth}
+            />
+          ) : (
+            <p className="text-muted-foreground text-center py-8">
+              No habits to display. Start by creating some habits!
+            </p>
           )}
+        </div>
 
-          {categoryStats.length > 0 && (
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-card rounded-lg p-6 border">
-                <h3 className="text-lg font-semibold mb-4">Performance by Category</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={categoryStats}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ category, percentage }) => `${category}: ${percentage.toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="completed"
-                    >
-                      {categoryStats.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-card rounded-lg p-6 border">
-                <h3 className="text-lg font-semibold mb-4">Category Breakdown</h3>
-                <div className="space-y-3">
-                  {categoryStats.map((cat, index) => (
-                    <div key={cat.category} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-4 h-4 rounded" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span className="font-medium">{cat.category}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold">{cat.percentage.toFixed(1)}%</div>
-                        <div className="text-sm text-muted-foreground">
-                          {cat.completed}/{cat.total}
-                        </div>
-                      </div>
+        <div className="bg-card p-6 rounded-lg border">
+          <h3 className="text-xl font-semibold mb-4">Habit Details</h3>
+          {habits.length > 0 ? (
+            <div className="space-y-4">
+              {habits.map(habit => {
+                const today = new Date().toISOString().split('T')[0]
+                const isCompletedToday = habit.completedDates.includes(today)
+                const streak = calculateStreak(habit.completedDates)
+                
+                return (
+                  <div key={habit.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{habit.name}</h4>
+                      <p className="text-sm text-muted-foreground">{habit.description}</p>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </section>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        {isCompletedToday ? '✅ Completed Today' : '⏳ Not yet'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Current Streak: {streak} days
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">
+              No habits to display. Start by creating some habits!
+            </p>
           )}
-
-          {habits.length > 0 && (
-            <section className="bg-card rounded-lg p-6 border">
-              <h3 className="text-lg font-semibold mb-4">Habit Details</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Habit</th>
-                      <th className="text-left py-2">Category</th>
-                      <th className="text-left py-2">Target</th>
-                      <th className="text-left py-2">Created</th>
-                      <th className="text-left py-2">Total Completions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {habits.map((habit) => {
-                      const habitRecords = records.filter(r => r.habitId === habit.id)
-                      const completions = habitRecords.filter(r => r.completed).length
-                      
-                      return (
-                        <tr key={habit.id} className="border-b">
-                          <td className="py-3">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${habit.color}`} />
-                              <span className="font-medium">{habit.name}</span>
-                            </div>
-                          </td>
-                          <td className="py-3 text-muted-foreground">{habit.category}</td>
-                          <td className="py-3">{habit.targetDays} days</td>
-                          <td className="py-3 text-muted-foreground">
-                            {new Date(habit.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="py-3">
-                            <span className="font-semibold text-green-600">
-                              {completions}
-                            </span>
-                            <span className="text-muted-foreground ml-1">
-                              / {habitRecords.length}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {habits.length === 0 && (
-            <section className="text-center py-12">
-              <div className="text-muted-foreground">
-                <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">No data to display</p>
-                <p className="text-sm">Start tracking habits to see your statistics</p>
-              </div>
-            </section>
-          )}
-        </main>
+        </div>
       </div>
     </div>
   )
+}
+
+function calculateStreak(completedDates: string[]): number {
+  if (completedDates.length === 0) return 0
+  
+  const sortedDates = [...completedDates].sort((a, b) => b.localeCompare(a))
+  const today = new Date().toISOString().split('T')[0]
+  
+  let streak = 0
+  let currentDate = new Date(today)
+  
+  for (let i = 0; i < sortedDates.length; i++) {
+    const dateStr = currentDate.toISOString().split('T')[0]
+    
+    if (sortedDates.includes(dateStr)) {
+      streak++
+      currentDate.setDate(currentDate.getDate() - 1)
+    } else if (i === 0) {
+      break
+    } else {
+      break
+    }
+  }
+  
+  return streak
 }
