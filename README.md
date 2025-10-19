@@ -1,6 +1,6 @@
 # Habit Tracker Pro
 
-A modern habit tracking application built with Next.js 14, TypeScript, and Tailwind CSS.
+A comprehensive habit tracking application built with Next.js 14, TypeScript, and Tailwind CSS.
 
 ## Getting Started
 
@@ -13,17 +13,15 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Features
 
-- Create and manage daily habits
-- Track habit completion with checkboxes
-- View statistics and progress visualization
-- Calendar view for habit completion history
-- Persistent data storage using localStorage
-- Responsive design for all devices
+- Track daily habits
+- View statistics and progress
+- Create, edit, and delete habits
+- Responsive design
+- Data persistence with localStorage
 
 ## Tech Stack
 
 - Next.js 14
 - TypeScript
 - Tailwind CSS
-- Lucide React (icons)
-- date-fns (date utilities)
+- React Context API
