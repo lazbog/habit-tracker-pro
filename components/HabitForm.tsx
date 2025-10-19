@@ -1,30 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
-import { useHabits } from '@/lib/HabitContext'
 import { HabitFormData } from '@/lib/types'
 
 interface HabitFormProps {
-  onSubmit?: () => void
+  onSubmit: (data: HabitFormData) => void
   onCancel?: () => void
   initialData?: Partial<HabitFormData>
-  editId?: string
 }
 
 const colors = [
-  '#ef4444', // red
-  '#f97316', // orange
-  '#eab308', // yellow
-  '#22c55e', // green
-  '#06b6d4', // cyan
-  '#3b82f6', // blue
-  '#8b5cf6', // violet
-  '#ec4899', // pink
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+  '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+  '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+  '#ec4899', '#f43f5e'
 ]
 
-export default function HabitForm({ onSubmit, onCancel, initialData, editId }: HabitFormProps) {
-  const { addHabit, updateHabit } = useHabits()
+export default function HabitForm({ onSubmit, onCancel, initialData }: HabitFormProps) {
   const [formData, setFormData] = useState<HabitFormData>({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -33,49 +25,14 @@ export default function HabitForm({ onSubmit, onCancel, initialData, editId }: H
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!formData.name.trim()) {
-      alert('Please enter a habit name')
-      return
-    }
-
-    if (editId) {
-      updateHabit(editId, formData)
-    } else {
-      addHabit(formData)
-    }
-    
-    onSubmit?.()
-    
-    if (!editId) {
-      setFormData({
-        name: '',
-        description: '',
-        color: colors[0],
-      })
-    }
-  }
-
-  const handleCancel = () => {
-    onCancel?.()
+    if (!formData.name.trim()) return
+    onSubmit(formData)
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {onCancel && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-      
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="name" className="block text-sm font-medium mb-1">
           Habit Name *
         </label>
         <input
@@ -83,60 +40,59 @@ export default function HabitForm({ onSubmit, onCancel, initialData, editId }: H
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder="e.g., Morning Exercise"
           required
         />
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description
+        <label htmlFor="description" className="block text-sm font-medium mb-1">
+          Description (optional)
         </label>
         <textarea
           id="description"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="Optional description of your habit"
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          placeholder="Add a brief description..."
           rows={3}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium mb-2">
           Color
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {colors.map((color) => (
             <button
               key={color}
               type="button"
               onClick={() => setFormData({ ...formData, color })}
-              className={`w-8 h-8 rounded-full transition-all ${
-                formData.color === color
-                  ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
-                  : 'hover:scale-105'
-              }`}
-              style={{ backgroundColor: color }}
-              aria-label={`Select color ${color}`}
+              className="w-8 h-8 rounded-full border-2 transition-all"
+              style={{
+                backgroundColor: color,
+                borderColor: formData.color === color ? '#1f2937' : 'transparent',
+                transform: formData.color === color ? 'scale(1.2)' : 'scale(1)'
+              }}
             />
           ))}
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-2 pt-4">
         <button
           type="submit"
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
         >
-          {editId ? 'Update Habit' : 'Add Habit'}
+          {initialData ? 'Update Habit' : 'Create Habit'}
         </button>
         {onCancel && (
           <button
             type="button"
-            onClick={handleCancel}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            onClick={onCancel}
+            className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
           >
             Cancel
           </button>

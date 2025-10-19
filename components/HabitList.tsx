@@ -1,114 +1,96 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Habit } from '@/lib/types'
+import { getHabits, getTodayRecord, toggleHabitCompletion, deleteHabit } from '@/lib/habits'
 import { Check, X, Edit2, Trash2 } from 'lucide-react'
-import { useHabits } from '@/lib/HabitContext'
-import HabitForm from './HabitForm'
 
 export default function HabitList() {
-  const { habits, toggleHabitCompletion, deleteHabit } = useHabits()
+  const [habits, setHabits] = useState<Habit[]>([])
+  const [completedIds, setCompletedIds] = useState<string[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
-  const today = new Date().toISOString().split('T')[0]
 
-  const handleToggle = (id: string) => {
-    toggleHabitCompletion(id, today)
+  useEffect(() => {
+    setHabits(getHabits())
+    setCompletedIds(getTodayRecord().completedHabitIds)
+  }, [])
+
+  const handleToggle = (habitId: string) => {
+    toggleHabitCompletion(habitId)
+    setCompletedIds(prev => 
+      prev.includes(habitId) 
+        ? prev.filter(id => id !== habitId)
+        : [...prev, habitId]
+    )
   }
 
-  const handleEdit = (id: string) => {
-    setEditingId(id)
-  }
-
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this habit?')) {
-      deleteHabit(id)
+  const handleDelete = (habitId: string) => {
+    if (window.confirm('Are you sure you want to delete this habit?')) {
+      deleteHabit(habitId)
+      setHabits(getHabits())
+      setCompletedIds(prev => prev.filter(id => id !== habitId))
     }
   }
 
-  const handleFormSubmit = () => {
-    setEditingId(null)
+  if (habits.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 mb-4">No habits yet. Create your first habit!</p>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {habits.map((habit) => {
-        const isCompletedToday = habit.completedDates.includes(today)
+        const isCompleted = completedIds.includes(habit.id)
         
-        if (editingId === habit.id) {
-          return (
-            <div key={habit.id} className="bg-white p-6 rounded-lg shadow-sm">
-              <HabitForm
-                initialData={{
-                  name: habit.name,
-                  description: habit.description,
-                  color: habit.color,
-                }}
-                onSubmit={handleFormSubmit}
-                onCancel={() => setEditingId(null)}
-                editId={habit.id}
-              />
-            </div>
-          )
-        }
-
         return (
           <div
             key={habit.id}
-            className={`bg-white p-6 rounded-lg shadow-sm border-2 transition-all ${
-              isCompletedToday ? 'border-green-500' : 'border-transparent'
+            className={`flex items-center gap-3 p-4 rounded-lg border transition-all ${
+              isCompleted ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: habit.color }}
-                  />
-                  <h3 className="text-lg font-semibold text-gray-900">{habit.name}</h3>
-                  {isCompletedToday && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                      Completed Today
-                    </span>
-                  )}
-                </div>
-                {habit.description && (
-                  <p className="text-gray-600 mb-3">{habit.description}</p>
-                )}
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span>Created: {new Date(habit.createdAt).toLocaleDateString()}</span>
-                  <span>Streak: {habit.completedDates.length} days</span>
-                </div>
+            <button
+              onClick={() => handleToggle(habit.id)}
+              className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                isCompleted
+                  ? 'bg-green-500 border-green-500 text-white'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              {isCompleted && <Check className="w-4 h-4" />}
+            </button>
+            
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: habit.color }}
+                />
+                <h3 className={`font-medium ${isCompleted ? 'line-through text-gray-500' : ''}`}>
+                  {habit.name}
+                </h3>
               </div>
-              
-              <div className="flex items-center gap-2 ml-4">
-                <button
-                  onClick={() => handleToggle(habit.id)}
-                  className={`p-3 rounded-lg transition-colors ${
-                    isCompletedToday
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                  }`}
-                  aria-label={isCompletedToday ? 'Mark as incomplete' : 'Mark as complete'}
-                >
-                  {isCompletedToday ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
-                </button>
-                
-                <button
-                  onClick={() => handleEdit(habit.id)}
-                  className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  aria-label="Edit habit"
-                >
-                  <Edit2 className="w-5 h-5" />
-                </button>
-                
-                <button
-                  onClick={() => handleDelete(habit.id)}
-                  className="p-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  aria-label="Delete habit"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
+              {habit.description && (
+                <p className="text-sm text-gray-600 mt-1">{habit.description}</p>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditingId(habit.id)}
+                className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleDelete(habit.id)}
+                className="p-2 text-gray-500 hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )

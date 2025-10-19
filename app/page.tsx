@@ -1,69 +1,88 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, BarChart3 } from 'lucide-react'
-import Link from 'next/link'
-import { HabitProvider, useHabits } from '@/lib/HabitContext'
+import { useState, useEffect } from 'react'
+import { Plus } from 'lucide-react'
 import HabitList from '@/components/HabitList'
 import HabitForm from '@/components/HabitForm'
+import { addHabit, updateHabit, getHabits } from '@/lib/habits'
+import { HabitFormData } from '@/lib/types'
 
-function HomePage() {
+export default function HomePage() {
   const [showForm, setShowForm] = useState(false)
-  const { habits } = useHabits()
+  const [editingHabit, setEditingHabit] = useState<{ id: string; data: Partial<HabitFormData> } | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleCreateHabit = (data: HabitFormData) => {
+    addHabit(data)
+    setShowForm(false)
+    setRefreshKey(prev => prev + 1)
+  }
+
+  const handleUpdateHabit = (data: HabitFormData) => {
+    if (editingHabit) {
+      updateHabit(editingHabit.id, data)
+      setEditingHabit(null)
+      setRefreshKey(prev => prev + 1)
+    }
+  }
+
+  const startEdit = (habitId: string) => {
+    const habits = getHabits()
+    const habit = habits.find(h => h.id === habitId)
+    if (habit) {
+      setEditingHabit({
+        id: habit.id,
+        data: {
+          name: habit.name,
+          description: habit.description,
+          color: habit.color
+        }
+      })
+    }
+  }
+
+  useEffect(() => {
+    if (editingHabit) {
+      setShowForm(true)
+    }
+  }, [editingHabit])
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <header className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Habit Tracker Pro</h1>
-          <Link
-            href="/stats"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <BarChart3 className="w-5 h-5" />
-            Stats
-          </Link>
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-2">Today's Habits</h2>
+        <p className="text-gray-600">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </p>
+      </div>
+
+      <div className="mb-6">
+        <HabitList key={refreshKey} />
+      </div>
+
+      {!showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          Add New Habit
+        </button>
+      ) : (
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-4">
+            {editingHabit ? 'Edit Habit' : 'Create New Habit'}
+          </h3>
+          <HabitForm
+            onEdit={handleUpdateHabit} onAdd={handleCreateHabit}
+            onCancel={() => {
+              setShowForm(false)
+              setEditingHabit(null)
+            }}
+            initialData={editingHabit?.data}
+          />
         </div>
-        <p className="text-gray-600">Track your daily habits and build better routines</p>
-      </header>
-
-      <main>
-        <div className="mb-6">
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Add New Habit
-          </button>
-        </div>
-
-        {showForm && (
-          <div className="mb-8">
-            <HabitForm
-              onSubmit={(habit) => {
-                setShowForm(false)
-              }}
-            />
-          </div>
-        )}
-
-        {habits.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <p className="text-gray-500 mb-4">No habits yet. Start by adding your first habit!</p>
-          </div>
-        ) : (
-          <HabitList />
-        )}
-      </main>
+      )}
     </div>
-  )
-}
-
-export default function Home() {
-  return (
-    <HabitProvider>
-      <HomePage />
-    </HabitProvider>
   )
 }

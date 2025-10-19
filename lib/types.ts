@@ -1,14 +1,18 @@
 export interface Habit {
   id: string
   name: string
-  description: string
+  description?: string
   createdAt: string
-  completedDates: string[]
   color: string
+}
+
+export interface DayRecord {
+  date: string // YYYY-MM-DD format
+  completedHabitIds: string[]
 }
 
 export interface HabitFormData {
   name: string
-  description: string
+  description?: string
   color: string
 }
