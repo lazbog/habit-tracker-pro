@@ -1,36 +1,33 @@
 export interface Habit {
   id: string
   name: string
-  description?: string
-  createdAt: string
+  description: string
   color: string
   icon: string
+  createdAt: string
+  completedDates: string[]
+  targetStreak: number
+  currentStreak: number
 }
 
-export interface HabitRecord {
-  id: string
-  habitId: string
-  date: string
-  completed: boolean
+export interface HabitFormData {
+  name: string
+  description: string
+  color: string
+  icon: string
+  targetStreak: number
 }
 
 export interface HabitStats {
-  habitId: string
-  habitName: string
-  totalDays: number
-  completedDays: number
-  streak: number
-  completionRate: number
-}
-
-export interface DailyStats {
-  date: string
   totalHabits: number
-  completedHabits: number
+  completedToday: number
+  currentStreak: number
+  longestStreak: number
   completionRate: number
 }
 
-export interface ChartData {
+export interface DailyProgress {
   date: string
-  completionRate: number
+  completed: number
+  total: number
 }
