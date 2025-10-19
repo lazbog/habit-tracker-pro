@@ -1,103 +1,126 @@
 'use client'
 
 import { useState } from 'react'
-import { HabitFormData } from '@/lib/types'
+import { Plus, X } from 'lucide-react'
 
 interface HabitFormProps {
-  onSubmit: (data: HabitFormData) => void
-  onCancel?: () => void
-  initialData?: Partial<HabitFormData>
+  onSubmit: (data: { name: string; description: string; color: string; icon: string }) => void
+  onCancel: () => void
 }
 
-const colors = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-  '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
-  '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-  '#ec4899', '#f43f5e'
-]
+const ICONS = ['🏃', '📚', '💪', '🧘', '💧', '🥗', '😴', '✍️', '🎯', '🎨']
+const COLORS = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-red-500']
 
-export default function HabitForm({ onSubmit, onCancel, initialData }: HabitFormProps) {
-  const [formData, setFormData] = useState<HabitFormData>({
-    name: initialData?.name || '',
-    description: initialData?.description || '',
-    color: initialData?.color || colors[0],
-  })
+export default function HabitForm({ onSubmit, onCancel }: HabitFormProps) {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [selectedIcon, setSelectedIcon] = useState(ICONS[0])
+  const [selectedColor, setSelectedColor] = useState(COLORS[0])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name.trim()) return
-    onSubmit(formData)
+    if (name.trim()) {
+      onSubmit({
+        name: name.trim(),
+        description: description.trim(),
+        color: selectedColor,
+        icon: selectedIcon,
+      })
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium mb-1">
-          Habit Name *
-        </label>
-        <input
-          type="text"
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="e.g., Morning Exercise"
-          required
-        />
-      </div>
-
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium mb-1">
-          Description (optional)
-        </label>
-        <textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Add a brief description..."
-          rows={3}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Color
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {colors.map((color) => (
-            <button
-              key={color}
-              type="button"
-              onClick={() => setFormData({ ...formData, color })}
-              className="w-8 h-8 rounded-full border-2 transition-all"
-              style={{
-                backgroundColor: color,
-                borderColor: formData.color === color ? '#1f2937' : 'transparent',
-                transform: formData.color === color ? 'scale(1.2)' : 'scale(1)'
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="flex gap-2 pt-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-card rounded-lg p-6 w-full max-w-md relative">
         <button
-          type="submit"
-          className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+          onClick={onCancel}
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
         >
-          {initialData ? 'Update Habit' : 'Create Habit'}
+          <X className="w-5 h-5" />
         </button>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </button>
-        )}
+        
+        <h2 className="text-xl font-semibold mb-4">Add New Habit</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="e.g., Morning Exercise"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Description (optional)</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Add a description..."
+              rows={3}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Icon</label>
+            <div className="flex flex-wrap gap-2">
+              {ICONS.map((icon) => (
+                <button
+                  key={icon}
+                  type="button"
+                  onClick={() => setSelectedIcon(icon)}
+                  className={`w-10 h-10 rounded-md flex items-center justify-center text-lg transition-colors ${
+                    selectedIcon === icon ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80'
+                  }`}
+                >
+                  {icon}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Color</label>
+            <div className="flex gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setSelectedColor(color)}
+                  className={`w-10 h-10 rounded-md ${color} flex items-center justify-center transition-opacity ${
+                    selectedColor === color ? 'ring-2 ring-ring ring-offset-2' : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  {selectedIcon === icon && (
+                    <span className="text-white text-sm">{icon}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 px-4 py-2 border border-input rounded-md hover:bg-secondary transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Habit
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   )
 }

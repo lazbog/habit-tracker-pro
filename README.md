@@ -1,69 +1,70 @@
 # Habit Tracker Pro
 
-A simple and effective habit tracking application built with Next.js 14, TypeScript, and Tailwind CSS. Track your daily habits, monitor your progress, and build consistency with visual statistics and calendar views.
+A modern habit tracking application built with Next.js 14, TypeScript, and Tailwind CSS. Track your daily habits, monitor your progress, and build better routines with comprehensive statistics and visualizations.
 
 ## Features
 
-- ✅ Daily habit tracking with simple check/uncheck interface
-- 📊 Visual statistics and progress tracking
-- 📅 Calendar view to visualize habit completion over time
-- 🔥 Streak tracking for each habit
-- 📈 Weekly and monthly progress charts
-- 🎨 Customizable habit colors
-- 📱 Responsive design for all devices
+- 📝 Create and manage daily habits with custom icons and colors
+- ✅ Mark habits as complete for any date
+- 📊 View detailed statistics and completion trends
+- 🔥 Track streaks and overall progress
+- 📈 Visual charts showing habit performance over time
+- 📱 Responsive design that works on all devices
 - 💾 Local storage for data persistence
 
 ## Getting Started
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Run the development server:
+```bash
+npm run dev
+```
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Usage
 
-1. **Create Habits**: Click "Add New Habit" to create habits you want to track
-2. **Track Daily**: Check off completed habits each day
-3. **View Statistics**: Visit the Statistics page to see your progress, streaks, and completion charts
-4. **Calendar View**: Use the calendar to see your habit completion patterns over time
+1. **Add Habits**: Click "Add Habit" to create new habits with custom names, descriptions, icons, and colors.
+2. **Track Progress**: Mark habits as complete for the current day or any past date.
+3. **View Statistics**: Switch to the Statistics tab to see your progress, streaks, and completion trends.
+4. **Monitor Trends**: Use the time range selector to view your progress over different periods.
 
 ## Tech Stack
 
 - **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
+- **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first CSS framework
+- **Recharts** - Data visualization library
 - **Lucide React** - Beautiful icons
-- **Recharts** - Chart library for statistics
+- **date-fns** - Date manipulation utilities
 
 ## Project Structure
 
 ```
+habit-tracker-pro/
 ├── app/
-│   ├── api/ping/          # Health check endpoint
-│   ├── statistics/        # Statistics page
-│   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Home page
-│   └── globals.css        # Global styles
-├── components/
-│   ├── Calendar.tsx       # Calendar component
-│   ├── HabitForm.tsx      # Form for creating/editing habits
-│   └── HabitList.tsx      # List of habits for today
-├── lib/
-│   ├── habits.ts          # Core habit management logic
-│   └── types.ts           # TypeScript type definitions
-└── public/                # Static assets
+│   ├── api/          # API routes
+│   ├── globals.css   # Global styles
+│   ├── layout.tsx    # Root layout
+│   └── page.tsx      # Home page
+├── components/       # React components
+│   ├── HabitForm.tsx
+│   ├── HabitList.tsx
+│   └── StatsView.tsx
+├── lib/             # Utilities and types
+│   ├── habits.ts    # Habit management logic
+│   └── types.ts     # TypeScript definitions
+└── public/          # Static assets
 ```
 
 ## Data Storage
 
-This application uses browser's localStorage to persist data locally. All your habits and completion records are stored on your device and are not sent to any server.
+This application uses localStorage to store habit data locally in your browser. No server or database is required.
 
-## License
+## Contributing
 
-MIT License - feel free to use this project for personal or commercial use.
+Feel free to submit issues and enhancement requests!
